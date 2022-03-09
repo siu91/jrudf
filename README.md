@@ -1,4 +1,4 @@
-# Doris Remote UDF 
+# Doris Java Remote UDF(JRUDF)
 
 ## GRPC Server 
 
