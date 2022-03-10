@@ -42,10 +42,17 @@ mvn package
 ### 运行
 
 ```shell
-java -jar target/jrudf-jar-with-dependencies.jar 9000
+java -jar jrudf-jar-with-dependencies.jar 9000
 ```
 `9000` 是默认端口，可以不传
 
+#### 远程调试
+远程服务器上启动服务
+```shell
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=[ip]:5005 -jar jrudf-jar-with-dependencies.jar
+```
+本地 IDEA 添加 Remote 配置:
+`Edit Configurtions-> Add New Configrution->Remote JVM Debug`
 
 
 ## 测试
