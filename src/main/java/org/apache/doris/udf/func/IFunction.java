@@ -2,6 +2,8 @@ package org.apache.doris.udf.func;
 
 import org.apache.doris.proto.FunctionService;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author siu
  */
@@ -11,6 +13,7 @@ public interface IFunction {
      *
      * @return 函数名
      */
+    @Nonnull
     String getName();
 
     /**
