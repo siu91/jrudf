@@ -24,7 +24,7 @@ import org.apache.doris.proto.Types;
 import java.util.logging.Logger;
 
 import io.grpc.stub.StreamObserver;
-import org.apache.doris.udf.func.FunctionFactory;
+import org.apache.doris.udf.func.Functions;
 
 /**
  * @author siu
@@ -41,7 +41,7 @@ public class FunctionServiceImpl extends PFunctionServiceGrpc.PFunctionServiceIm
     public void fnCall(FunctionService.PFunctionCallRequest request,
                        StreamObserver<FunctionService.PFunctionCallResponse> responseObserver) {
         logger.info("fnCall request=" + request);
-        FunctionService.PFunctionCallResponse response = FunctionFactory.response(request);
+        FunctionService.PFunctionCallResponse response = Functions.get().call(request);
         logger.info("fnCall res=" + response);
         completed(responseObserver, response);
     }
@@ -49,14 +49,10 @@ public class FunctionServiceImpl extends PFunctionServiceGrpc.PFunctionServiceIm
     @Override
     public void checkFn(FunctionService.PCheckFunctionRequest request,
                         StreamObserver<FunctionService.PCheckFunctionResponse> responseObserver) {
-        // symbol is functionName
         logger.info("checkFn request=" + request);
         int status = 0;
-        if ("add_int".equals(request.getFunction().getFunctionName())) {
-            // check inputs count
-            if (request.getFunction().getInputsCount() != 2) {
-                status = -1;
-            }
+        if (!Functions.get().check(request)) {
+            status = -1;
         }
         FunctionService.PCheckFunctionResponse res =
                 FunctionService.PCheckFunctionResponse.newBuilder()

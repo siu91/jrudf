@@ -26,7 +26,7 @@
 │                       └── udf
 │                           ├── Main.java # 入口文件
 │                           ├── func
-│                           │   └── FunctionFactory.java # func 工厂，todo 再增加一个 func 抽象去实现其它功能函数
+│                           │   └── Functions.java # func 工厂,SPI 方式加载 UDF
 │                           └── server # GRPC Server
 │                               ├── FunctionServiceImpl.java
 │                               └── RpcServer.java

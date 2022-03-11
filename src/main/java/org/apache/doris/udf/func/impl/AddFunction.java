@@ -1,7 +1,8 @@
-package org.apache.doris.udf.func;
+package org.apache.doris.udf.func.impl;
 
 import org.apache.doris.proto.FunctionService;
 import org.apache.doris.proto.Types;
+import org.apache.doris.udf.func.IFunction;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -9,12 +10,23 @@ import java.util.stream.IntStream;
 /**
  * @author siu
  */
-public class FunctionFactory {
+public class AddFunction implements IFunction {
+    @Override
+    public String getName() {
+        return "add_init";
+    }
 
-    public static FunctionService.PFunctionCallResponse response(FunctionService.PFunctionCallRequest request) {
+    @Override
+    public boolean check(FunctionService.PCheckFunctionRequest request) {
+        return true;
+    }
+
+
+    @Override
+    public FunctionService.PFunctionCallResponse call(FunctionService.PFunctionCallRequest request) {
         String functionName = request.getFunctionName();
         FunctionService.PFunctionCallResponse res;
-        if ("add_int".equals(functionName)) {
+        if (this.getName().equals(functionName)) {
             res = FunctionService.PFunctionCallResponse.newBuilder()
                     .setStatus(Types.PStatus.newBuilder().setStatusCode(0).build())
                     .setResult(Types.PValues.newBuilder().setHasNull(false)

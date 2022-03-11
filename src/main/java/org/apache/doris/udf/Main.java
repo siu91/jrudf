@@ -17,6 +17,7 @@
 
 package org.apache.doris.udf;
 
+import org.apache.doris.udf.func.Functions;
 import org.apache.doris.udf.server.RpcServer;
 
 import java.io.IOException;
@@ -47,6 +48,7 @@ public class Main {
             System.exit(1);
         }
         final RpcServer server = new RpcServer();
+        Functions.get();
         server.start(port);
         server.blockUntilShutdown();
     }

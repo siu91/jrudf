@@ -1,0 +1,2 @@
+org.apache.doris.udf.func.impl.AddFunction
+com.siu.udf.SubFunction
