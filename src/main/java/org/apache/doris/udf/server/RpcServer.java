@@ -19,6 +19,7 @@ package org.apache.doris.udf.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.protobuf.services.ProtoReflectionService;
 import org.apache.doris.udf.server.interceptor.LogServerInterceptor;
 
 import java.io.IOException;
@@ -34,12 +35,23 @@ public class RpcServer {
     private Server server;
 
     public void start(int port) throws IOException {
-        server = ServerBuilder.forPort(port)
-                .addService(new FunctionServiceImpl())
-                // .addService(ProtoReflectionService.newInstance()) // 反射
-                .intercept(new LogServerInterceptor())
-                .build()
-                .start();
+        this.start(port, false);
+    }
+
+    public void start(int port, boolean debug) throws IOException {
+        if (debug) {
+            server = ServerBuilder.forPort(port)
+                    .addService(new FunctionServiceImpl())
+                    .addService(ProtoReflectionService.newInstance())
+                    .intercept(new LogServerInterceptor())
+                    .build()
+                    .start();
+        } else {
+            server = ServerBuilder.forPort(port)
+                    .addService(new FunctionServiceImpl())
+                    .build()
+                    .start();
+        }
         logger.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override

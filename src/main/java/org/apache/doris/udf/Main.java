@@ -21,6 +21,7 @@ import org.apache.doris.udf.func.Functions;
 import org.apache.doris.udf.server.RpcServer;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,6 +36,7 @@ public class Main {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
         int port = 9000;
+        boolean debug = false;
         if (args.length > 0) {
             try {
                 port = Integer.parseInt(args[0]);
@@ -47,9 +49,16 @@ public class Main {
             System.err.println("port " + args[0] + " must be positive.");
             System.exit(1);
         }
+        if (args.length > 1) {
+            debug = Boolean.parseBoolean(args[1]);
+        }
+
+        if (debug) {
+            Logger.getGlobal().setLevel(Level.WARNING);
+        }
         final RpcServer server = new RpcServer();
         Functions.get();
-        server.start(port);
+        server.start(port, debug);
         server.blockUntilShutdown();
     }
 }
