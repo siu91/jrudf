@@ -56,6 +56,11 @@ public class Functions {
         return function.call(request);
     }
 
+    /**
+     * 参数检查等
+     * @param request 请求
+     * @return ture 通过
+     */
     public boolean check(FunctionService.PCheckFunctionRequest request) {
         String functionName = request.getFunction().getFunctionName();
         IFunction function = FUNCTION_MAP.get(functionName);

@@ -50,10 +50,7 @@ public class FunctionServiceImpl extends PFunctionServiceGrpc.PFunctionServiceIm
     public void checkFn(FunctionService.PCheckFunctionRequest request,
                         StreamObserver<FunctionService.PCheckFunctionResponse> responseObserver) {
         logger.info("checkFn request=" + request);
-        int status = 0;
-        if (!Functions.get().check(request)) {
-            status = -1;
-        }
+        int status = Functions.get().check(request) ? 0 : 1;
         FunctionService.PCheckFunctionResponse res =
                 FunctionService.PCheckFunctionResponse.newBuilder()
                         .setStatus(Types.PStatus.newBuilder().setStatusCode(status).build()).build();
