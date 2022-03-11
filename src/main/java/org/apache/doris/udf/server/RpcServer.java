@@ -19,7 +19,7 @@ package org.apache.doris.udf.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.grpc.protobuf.services.ProtoReflectionService;
+import org.apache.doris.udf.server.interceptor.LogServerInterceptor;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +37,7 @@ public class RpcServer {
         server = ServerBuilder.forPort(port)
                 .addService(new FunctionServiceImpl())
                 // .addService(ProtoReflectionService.newInstance()) // 反射
+                .intercept(new LogServerInterceptor())
                 .build()
                 .start();
         logger.info("Server started, listening on " + port);

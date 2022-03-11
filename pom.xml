@@ -22,7 +22,7 @@ under the License.
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.doris</groupId>
     <artifactId>jrudf</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1</version>
     <name>Remote UDF Demo in Java</name>
     <url>https://doris.apache.org/</url>
     <properties>
