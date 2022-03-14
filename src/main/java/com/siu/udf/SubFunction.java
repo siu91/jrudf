@@ -4,6 +4,7 @@ import org.apache.doris.proto.FunctionService;
 import org.apache.doris.proto.Types;
 import org.apache.doris.udf.func.IFunction;
 
+import javax.annotation.Nonnull;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -11,6 +12,7 @@ import java.util.stream.IntStream;
  * @author siu
  */
 public class SubFunction implements IFunction {
+    @Nonnull
     @Override
     public String getName() {
         return "sub_int";
