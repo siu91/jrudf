@@ -273,3 +273,11 @@ tar zcvf apache-doris-latest-454b45b-incubating.tar.gz ./output
 - Doris 源码编译时 gcc  找不到，版本不对
 
   需要 which 一下看看 gcc 的位置，在 `env.sh` 中设置一下 `${DORIS_GCC_HOME}`
+
+
+
+## ref
+
+- [Doris Remote UDF](https://doris.apache.org/zh-CN/extending-doris/udf/remote-user-defined-function.html)
+- [Doris 编译](https://doris.apache.org/zh-CN/installing/compilation.html#%E4%BD%BF%E7%94%A8-docker-%E5%BC%80%E5%8F%91%E9%95%9C%E5%83%8F%E7%BC%96%E8%AF%91-%E6%8E%A8%E8%8D%90)
+- [mysqlslap](https://dev.mysql.com/doc/refman/8.0/en/mysqlslap.html)
