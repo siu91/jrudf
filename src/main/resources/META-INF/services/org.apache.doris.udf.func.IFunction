@@ -1,2 +1,2 @@
-org.apache.doris.udf.func.impl.AddFunction
-com.siu.udf.SubFunction
+com.siu.udf.AddFunction
+com.siu.udf.StringLengthFunction

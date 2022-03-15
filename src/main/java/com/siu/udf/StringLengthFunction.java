@@ -4,18 +4,16 @@ import org.apache.doris.proto.FunctionService;
 import org.apache.doris.proto.Types;
 import org.apache.doris.udf.func.IFunction;
 
-import javax.annotation.Nonnull;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * @author siu
  */
-public class SubFunction implements IFunction {
-    @Nonnull
+public class StringLengthFunction implements IFunction {
     @Override
     public String getName() {
-        return "sub_int";
+        return "str_length";
     }
 
     @Override
@@ -32,10 +30,10 @@ public class SubFunction implements IFunction {
             res = FunctionService.PFunctionCallResponse.newBuilder()
                     .setStatus(Types.PStatus.newBuilder().setStatusCode(0).build())
                     .setResult(Types.PValues.newBuilder().setHasNull(false)
-                            .addAllInt32Value(IntStream.range(0, Math.min(request.getArgs(0)
-                                    .getInt32ValueCount(), request.getArgs(1).getInt32ValueCount()))
-                                    .mapToObj(i -> request.getArgs(0).getInt32Value(i) - request.getArgs(1)
-                                            .getInt32Value(i)).collect(Collectors.toList()))
+                            .addAllInt32Value(
+                                    IntStream.range(0, Math.max(0, request.getArgs(0).getStringValueCount()))
+                                            .mapToObj(i -> request.getArgs(0).getStringValue(i).length())
+                                            .collect(Collectors.toList()))
                             .setType(Types.PGenericType.newBuilder().setId(Types.PGenericType.TypeId.INT32).build())
                             .build()).build();
         } else {

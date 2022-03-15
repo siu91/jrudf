@@ -1,4 +1,4 @@
-package org.apache.doris.udf.func.impl;
+package com.siu.udf;
 
 import org.apache.doris.proto.FunctionService;
 import org.apache.doris.proto.Types;
@@ -15,7 +15,7 @@ public class AddFunction implements IFunction {
     @Nonnull
     @Override
     public String getName() {
-        return "add_init";
+        return "add_int";
     }
 
     @Override
