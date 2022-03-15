@@ -153,8 +153,9 @@ UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函�
 
 > #### 说明
 >
-> Native UDF 在性能上有天然的优势，所以比较性能时，需要开启 Doris 的向量化引擎才有比较的意义，这里只是简单的设计几个对照组，每组执行10次，分别为：
+> Native UDF 在性能上有天然的优势，所以比较性能时，需要开启 Doris 的向量化引擎才有比较的意义，这里只是简单的设计几个对照组，每组执行10个客户端/5次/没个客户端限制10次查询，分别为：
 >
+> - Build-in Function
 > - Native UDF
 > - Remote UDF 1 （enable_vectorized_engine = false）
 > - Remote UDF 2（enable_vectorized_engine = true，batch_size = 1024）
@@ -162,6 +163,59 @@ UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函�
 > - Remote UDF 4（enable_vectorized_engine = true，batch_size = 4096）
 >
 > ***注：UDF 的实现逻辑 str.length()***
+
+
+
+```sql
+mysqlslap -h doris.host --concurrency=3 --iterations=5 --create-schema='ssb' --query='select sum(str_length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(str_length(c_address)) from customer;" --csv=out.csv
+```
+
+```sql
+ysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(str_length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(ssb.str_length(c_address)) from ssb.customer;"
+```
+
+```sql
+mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(length(c_address)) from ssb.customer;"
+```
+
+```shell
+[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select str_length(c_address) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select ssb.str_length(c_address) from ssb.customer;"
+Benchmark
+        Average number of seconds to run all queries: 2.407 seconds
+        Minimum number of seconds to run all queries: 2.312 seconds
+        Maximum number of seconds to run all queries: 2.528 seconds
+        Number of clients running queries: 10
+        Average number of queries per client: 1
+
+[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select length(c_address) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select length(c_address) from ssb.customer;"
+Benchmark
+        Average number of seconds to run all queries: 1.233 seconds
+        Minimum number of seconds to run all queries: 1.172 seconds
+        Maximum number of seconds to run all queries: 1.315 seconds
+        Number of clients running queries: 10
+        Average number of queries per client: 1
+```
+
+
+
+```shell
+
+[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(str_length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(ssb.str_length(c_address)) from ssb.customer;"
+Benchmark
+        Average number of seconds to run all queries: 1.173 seconds
+        Minimum number of seconds to run all queries: 1.047 seconds
+        Maximum number of seconds to run all queries: 1.432 seconds
+        Number of clients running queries: 10
+        Average number of queries per client: 1
+
+[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(length(c_address)) from ssb.customer;"
+Benchmark
+        Average number of seconds to run all queries: 0.103 seconds
+        Minimum number of seconds to run all queries: 0.081 seconds
+        Maximum number of seconds to run all queries: 0.140 seconds
+        Number of clients running queries: 10
+        Average number of queries per client: 1
+```
 
 
 
