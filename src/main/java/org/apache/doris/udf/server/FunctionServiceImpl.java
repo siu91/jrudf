@@ -32,6 +32,12 @@ import org.apache.doris.udf.func.Functions;
 public class FunctionServiceImpl extends PFunctionServiceGrpc.PFunctionServiceImplBase {
     private static final Logger logger = Logger.getLogger(FunctionServiceImpl.class.getName());
 
+    private final boolean debug;
+
+    public FunctionServiceImpl(boolean debug) {
+        this.debug = debug;
+    }
+
     public static <T> void completed(StreamObserver<T> observer, T data) {
         observer.onNext(data);
         observer.onCompleted();
@@ -40,27 +46,37 @@ public class FunctionServiceImpl extends PFunctionServiceGrpc.PFunctionServiceIm
     @Override
     public void fnCall(FunctionService.PFunctionCallRequest request,
                        StreamObserver<FunctionService.PFunctionCallResponse> responseObserver) {
-        logger.info("fnCall request=" + request);
+        if (debug) {
+            logger.info("fnCall request=" + request);
+        }
         FunctionService.PFunctionCallResponse response = Functions.get().call(request);
-        logger.info("fnCall res=" + response);
+        if (debug) {
+            logger.info("fnCall res=" + response);
+        }
         completed(responseObserver, response);
     }
 
     @Override
     public void checkFn(FunctionService.PCheckFunctionRequest request,
                         StreamObserver<FunctionService.PCheckFunctionResponse> responseObserver) {
-        logger.info("checkFn request=" + request);
+        if (debug) {
+            logger.info("checkFn request=" + request);
+        }
         int status = Functions.get().check(request) ? 0 : 1;
         FunctionService.PCheckFunctionResponse res =
                 FunctionService.PCheckFunctionResponse.newBuilder()
                         .setStatus(Types.PStatus.newBuilder().setStatusCode(status).build()).build();
-        logger.info("checkFn res=" + res);
+        if (debug) {
+            logger.info("checkFn res=" + res);
+        }
         completed(responseObserver, res);
     }
 
     @Override
     public void handShake(Types.PHandShakeRequest request, StreamObserver<Types.PHandShakeResponse> responseObserver) {
-        logger.info("handShake request=" + request);
+        if (debug) {
+            logger.info("handShake request=" + request);
+        }
         completed(responseObserver,
                 Types.PHandShakeResponse.newBuilder().setStatus(Types.PStatus.newBuilder().setStatusCode(0).build())
                         .setHello(request.getHello()).build());

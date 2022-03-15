@@ -53,7 +53,7 @@ public class Main {
             debug = Boolean.parseBoolean(args[1]);
         }
 
-        if (debug) {
+        if (!debug) {
             Logger.getGlobal().setLevel(Level.WARNING);
         }
         final RpcServer server = new RpcServer();

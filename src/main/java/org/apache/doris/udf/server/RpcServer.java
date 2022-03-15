@@ -41,14 +41,14 @@ public class RpcServer {
     public void start(int port, boolean debug) throws IOException {
         if (debug) {
             server = ServerBuilder.forPort(port)
-                    .addService(new FunctionServiceImpl())
+                    .addService(new FunctionServiceImpl(true))
                     .addService(ProtoReflectionService.newInstance())
                     .intercept(new LogServerInterceptor())
                     .build()
                     .start();
         } else {
             server = ServerBuilder.forPort(port)
-                    .addService(new FunctionServiceImpl())
+                    .addService(new FunctionServiceImpl(false))
                     .build()
                     .start();
         }

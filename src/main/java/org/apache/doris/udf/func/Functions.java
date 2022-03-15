@@ -1,16 +1,19 @@
 package org.apache.doris.udf.func;
 
 import org.apache.doris.proto.FunctionService;
+import org.apache.doris.udf.server.FunctionServiceImpl;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.logging.Logger;
 
 /**
  * @author siu
  */
 public class Functions {
 
+    private static final Logger logger = Logger.getLogger(Functions.class.getName());
     /**
      * 函数实现
      */
@@ -42,6 +45,7 @@ public class Functions {
     private static void register() {
         ServiceLoader<IFunction> fs = ServiceLoader.load(IFunction.class);
         for (IFunction f : fs) {
+            logger.info("register function:" + f.getName());
             FUNCTION_MAP.put(f.getName(), f);
         }
     }
