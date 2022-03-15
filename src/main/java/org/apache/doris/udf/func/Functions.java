@@ -28,7 +28,7 @@ public class Functions {
             synchronized (Functions.class) {
                 if (functions == null) {
                     functions = new Functions();
-                    load();
+                    register();
                 }
             }
         }
@@ -39,7 +39,7 @@ public class Functions {
     /**
      * load function from SPI
      */
-    private static void load() {
+    private static void register() {
         ServiceLoader<IFunction> fs = ServiceLoader.load(IFunction.class);
         for (IFunction f : fs) {
             FUNCTION_MAP.put(f.getName(), f);
