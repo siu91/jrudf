@@ -1,0 +1,4 @@
+# test 6: Remote UDF 4（enable_vectorized_engine = true，batch_size = 4096）
+test_name='rudf4-t-4096'
+query_sql="select ssb.str_length(c_address) from ssb.customer;"
+pre_query="set global enable_vectorized_engine=true;set global batch_size=4096;"

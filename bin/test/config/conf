@@ -1,0 +1,11 @@
+# 全局参数
+
+db_ip=$(hostname -I | awk '{gsub(/^\s+|\s+$/, "");print}')
+# 总查询的次数 = min(client_queries_limit,client_num * run_times)
+client_num=10
+run_times=5
+# 官方文档说明：Limit each client to approximately this number of queries，实际限制每个 client，而是限制总查询数
+client_queries_limit=10
+db_schema='ssb'
+db_user='root'
+db_port='9030'

@@ -1,0 +1,4 @@
+# test 2：Native UDF
+test_name='n-udf-f'
+query_sql="select ssb.get_string_length(c_address) from ssb.customer;"
+pre_query="set global enable_vectorized_engine=false;"
