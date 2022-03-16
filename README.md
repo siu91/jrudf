@@ -1,4 +1,4 @@
-# Doris  Remote UDF 开发和调试
+# Doris  Remote UDF 方案
 
 
 
@@ -27,13 +27,13 @@ Remote UDF Service 支持通过 RPC 的方式访问用户提供的 UDF Service�
 
 
 
-## RPC Server 
+## Remote UDF 开发和调试：RPC Server 
 
 
 
 ### 设计
 
-![](./arch.svg)
+![](assets/arch.svg)
 
 ### 开发
 
@@ -149,74 +149,83 @@ UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函�
 
 
 
-## Native UDF 和 Remote UDF 性能对比
+## Remote UDF 性能测试
+
+
+
+### 测试模型
 
 > #### 说明
 >
-> Native UDF 在性能上有天然的优势，所以比较性能时，需要开启 Doris 的向量化引擎才有比较的意义，这里只是简单的设计几个对照组，每组执行10个客户端/5次/没个客户端限制10次查询，分别为：
+> Native UDF 在性能上有天然的优势，所以比较性能时，需要开启 Doris 的向量化引擎才有比较的意义，这里只是简单的设计几个对照组，每组执行10次查询，分别为：
 >
-> - Build-in Function
+> - Build-in Function（`lenght()`）
 > - Native UDF
-> - Remote UDF 1 （enable_vectorized_engine = false）
+> - Remote UDF 1 （enable_vectorized_engine = false） ***这一组测试无法完成***
 > - Remote UDF 2（enable_vectorized_engine = true，batch_size = 1024）
 > - Remote UDF 3（enable_vectorized_engine = true，batch_size = 2048）
 > - Remote UDF 4（enable_vectorized_engine = true，batch_size = 4096）
+> - Remote UDF 5（enable_vectorized_engine = true，batch_size = 8192）
 >
-> ***注：UDF 的实现逻辑 str.length()***
+> ***注：UDF 的实现逻辑 str.length()***，内置函数选取 length() 进行比较
+>
+> 测试工具：mysqlslqp
+>
+> 测试环境：3 be 32G/8C，RPC Server JVM 默认
 
 
 
-```sql
-mysqlslap -h doris.host --concurrency=3 --iterations=5 --create-schema='ssb' --query='select sum(str_length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(str_length(c_address)) from customer;" --csv=out.csv
-```
+### 测试数据
 
-```sql
-ysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(str_length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(ssb.str_length(c_address)) from ssb.customer;"
-```
-
-```sql
-mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(length(c_address)) from ssb.customer;"
-```
+单节点的 rpc server 下得出如下测试数据：
 
 ```shell
-[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select str_length(c_address) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select ssb.str_length(c_address) from ssb.customer;"
-Benchmark
-        Average number of seconds to run all queries: 2.407 seconds
-        Minimum number of seconds to run all queries: 2.312 seconds
-        Maximum number of seconds to run all queries: 2.528 seconds
-        Number of clients running queries: 10
-        Average number of queries per client: 1
-
-[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select length(c_address) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select length(c_address) from ssb.customer;"
-Benchmark
-        Average number of seconds to run all queries: 1.233 seconds
-        Minimum number of seconds to run all queries: 1.172 seconds
-        Maximum number of seconds to run all queries: 1.315 seconds
-        Number of clients running queries: 10
-        Average number of queries per client: 1
+##########################################################################
+测试全局参数：
+client_num=10
+queries_num=10
+测试结果： 
+test_name        mode   avg    min    max    client_num  queries_per_client
+build-in         mixed  1.784  1.669  1.856  10          1
+n-udf-f          mixed  1.865  1.791  1.957  10          1
+r-udf-2-t-1024   mixed  3.609  3.388  3.787  10          1
+r-udf-3-t-2048   mixed  3.032  2.748  3.775  10          1
+r-udf-4-t-4096   mixed  2.506  2.347  2.942  10          1
+r-udf-5-t-8192   mixed  2.178  2.059  2.374  10          1
+r-udf-6-t-16384  mixed  1.971  1.848  2.271  10          1
+#########################################################################
 ```
 
 
+
+在 3 个节点的 rpc server 下得出如下测试数据：
 
 ```shell
-
-[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(str_length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(ssb.str_length(c_address)) from ssb.customer;"
-Benchmark
-        Average number of seconds to run all queries: 1.173 seconds
-        Minimum number of seconds to run all queries: 1.047 seconds
-        Maximum number of seconds to run all queries: 1.432 seconds
-        Number of clients running queries: 10
-        Average number of queries per client: 1
-
-[root@test-fe-1 app]# mysqlslap -h doris.host --concurrency=10 --iterations=5 --create-schema='ssb' --query='select sum(length(c_address)) from customer;' --number-of-queries=10 -u root -P 9030 --pre-query "select sum(length(c_address)) from ssb.customer;"
-Benchmark
-        Average number of seconds to run all queries: 0.103 seconds
-        Minimum number of seconds to run all queries: 0.081 seconds
-        Maximum number of seconds to run all queries: 0.140 seconds
-        Number of clients running queries: 10
-        Average number of queries per client: 1
+##########################################################################
+测试全局参数：
+client_num=10
+queries_num=10
+测试结果： 
+test_name        mode   avg    min    max    client_num  queries_per_client
+build-in         mixed  1.683  1.252  1.923  10          1
+n-udf-f          mixed  1.797  1.694  1.912  10          1
+r-udf-2-t-1024   mixed  2.384  1.882  3.388  10          1
+r-udf-3-t-2048   mixed  1.688  1.479  1.886  10          1
+r-udf-4-t-4096   mixed  1.455  1.374  1.615  10          1
+r-udf-5-t-8192   mixed  1.358  1.272  1.436  10          1
+r-udf-6-t-16384  mixed  1.329  1.265  1.474  10          1
+#########################################################################
 ```
 
+### 测试结论
+
+1. Native UDF 的性能与内置函数的**性能基本一致**
+2. 在非向量化引擎的环境下，Remote UDF 性能**极差**
+3. 在向量化引擎的环境下，Native UDF **不能使用**
+4. **推荐**使用配置 enable_vectorized_engine = true，batch_size = 4096 （实际做了几十次验证，这个配置是最稳定的）
+5. 在 **4** 推荐配置下，单节点 rpc server 时，Remote UDF 与 Native UDF **性能差距大概有 35%**
+6. 在 **4** 推荐配置下，3 节点 rpc server 时，Remote UDF 与 Native UDF **性能领先大概有 36%**（此时 Doris 没有明显瓶颈，目前没有准确的数据去描述节点数量对于Remote UDF 性能的线性影响有多大，不排除在更高规格下 Native UDF 可能表现更佳）
+7. 不排除处理复杂的自定义函数时 Remote UDF 性能表现会下降，特别是有大量数据要通过网络传输时，推荐配置也会随场景不同有所不同
 
 
 
@@ -224,6 +233,7 @@ Benchmark
 
 
 
+# 附录
 
 ## 编译 Doris
 

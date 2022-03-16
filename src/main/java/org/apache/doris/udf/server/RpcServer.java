@@ -41,6 +41,7 @@ public class RpcServer {
     public void start(int port, boolean debug) throws IOException {
         if (debug) {
             server = ServerBuilder.forPort(port)
+                    .maxInboundMessageSize(16777216)
                     .addService(new FunctionServiceImpl(true))
                     .addService(ProtoReflectionService.newInstance())
                     .intercept(new LogServerInterceptor())
