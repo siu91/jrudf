@@ -14,6 +14,8 @@ CURRENT_PATH=$(readlink -f "$(dirname "$0")")
 
 date_str=$(date "+%Y%m%d%H%M%S%3N")
 archive_dir=test-"${date_str}"
+# 创建归档目录
+mkdir "${archive_dir}"
 
 ## 记录日志
 log() {
@@ -29,7 +31,7 @@ log1() {
   echo $1 >> "${archive_dir}"/run.log
 }
 
-run(){
+runMss(){
     mysqlslap -u ${db_user} -P ${db_port} -h ${db_ip} \
 --concurrency=${client_num} --iterations=${run_times} --number-of-queries=${client_queries_limit} --create-schema=${db_schema} \
 --query=./"${archive_dir}"/"$1".sql \
@@ -46,7 +48,7 @@ run(){
 
 }
 
-runSingle(){
+runJob(){
   test_name=$1
   query_sql=$2
   pre_query=$3
@@ -57,29 +59,27 @@ runSingle(){
   log "执行测试：${test_name} "
   log "执行预处理：${pre_query}"
   log "执行测试 SQL：${query_sql}"
-  run "${test_name}"
+  runMss "${test_name}"
 }
 
-
-# 创建归档目录
-mkdir "${archive_dir}"
-
-for file in "${CURRENT_PATH}"/config/jobs/*
+runJobs(){
+  for file in "${CURRENT_PATH}"/config/jobs/*
 do
     if test -f $file
     then
         #log "加载：$file"
         # shellcheck disable=SC1090
         . "$file"
-        runSingle "${test_name}" "${query_sql}" "${pre_query}"
+        runJob "${test_name}" "${query_sql}" "${pre_query}"
     fi
     if test -d "$file"
     then
         log "dir:$file"
     fi
 done
+}
 
-
+archiveRes(){
 # 归档测试结果
 echo 'test_name,mode,avg,min,max,client_num,queries_per_client' > "${archive_dir}"/0.csv
 cat "${archive_dir}"/*.csv > "${archive_dir}"/result.csv
@@ -94,5 +94,17 @@ log1 "测试结果： ${archive_dir}/result.csv "
 resFmt=$(cat "${archive_dir}"/result.csv | column -t -s,)
 log1 "${resFmt}"
 log1 "#########################################################################"
+}
+
+
+main(){
+  runJobs
+  archiveRes
+}
+
+main
+
+
+
 
 
