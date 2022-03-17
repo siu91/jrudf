@@ -66,6 +66,7 @@ runJobs() {
 			#log "加载：$file"
 			# shellcheck disable=SC1090
 			. "$file"
+			test_name=$(basename "$file")
 			runJob "${test_name}" "${query_sql}" "${pre_query}"
 		fi
 		if test -d "$file"; then
