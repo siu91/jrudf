@@ -81,7 +81,7 @@ archiveRes() {
 	rm -rf "${archive_dir}"/0.csv
 
 	log1 "##########################################################################"
-	log1 "测试全局参数："
+	log1 "全局参数："
 	log1 "client_num=${client_num}"
 	log1 "queries_num=${client_queries_limit}"
 	log1 "测试结果： ${archive_dir}/result.csv "
