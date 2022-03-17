@@ -12,9 +12,9 @@ CURRENT_PATH=$(readlink -f "$(dirname "$0")")
 . "${CURRENT_PATH}"/config/conf
 
 date_str=$(date "+%Y%m%d%H%M%S%3N")
-archive_dir=test-"${date_str}"
+archive_dir=./output/test-"${date_str}"
 # 创建归档目录
-mkdir "${archive_dir}"
+mkdir -p "${archive_dir}"
 
 ## 记录日志
 log() {
