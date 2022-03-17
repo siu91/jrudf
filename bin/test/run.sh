@@ -7,19 +7,23 @@
 # @Usage
 # @author Siu
 
-
 CURRENT_PATH=$(readlink -f "$(dirname "$0")")
 
 ##  region 全局参数：当有配置文件覆盖时这里的参数无效
 db_ip=$(hostname -I | awk '{gsub(/^\s+|\s+$/, "");print}')
 # 总查询的次数 = min(client_queries_limit,client_num * run_times)
-client_num=11
+client_num=10
 run_times=5
 # 官方文档说明：Limit each client to approximately this number of queries，实际限制每个 client，而是限制总查询数
 client_queries_limit=10
 db_schema='ssb'
 db_user='root'
 db_port='9030'
+
+# 配置文件
+conf_file="${CURRENT_PATH}"/config/conf
+# jobs
+jobs_path="${CURRENT_PATH}"/config/jobs
 ## endregion
 
 ## 记录日志
@@ -67,18 +71,24 @@ runJob() {
 }
 
 runJobs() {
-	for file in "${CURRENT_PATH}"/config/jobs/*; do
-		if test -f $file; then
-			#log "加载：$file"
-			# shellcheck disable=SC1090
-			. "$file"
-			test_name=$(basename "$file")
-			runJob "${test_name}" "${query_sql}" "${pre_query}"
-		fi
-		if test -d "$file"; then
-			log "dir:$file"
-		fi
-	done
+	if [ ! -d "${jobs_path}" ]; then
+		log "jobs 路径不存在：$jobs_path"
+		exit 1
+	else
+		for file in "${jobs_path}"/*; do
+			if test -f $file; then
+				#log "加载：$file"
+				# shellcheck disable=SC1090
+				. "$file"
+				test_name=$(basename "$file")
+				runJob "${test_name}" "${query_sql}" "${pre_query}"
+			fi
+			if test -d "$file"; then
+				log "dir:$file"
+			fi
+		done
+	fi
+
 }
 
 archiveRes() {
@@ -96,18 +106,18 @@ archiveRes() {
 }
 
 main() {
-  loadConf
-  showArgs
-  date_str=$(date "+%Y%m%d%H%M%S%3N")
-  archive_dir=./output/test-"${date_str}"
-  # 创建归档目录
-  mkdir -p "${archive_dir}"
+	loadConf
+	showArgs
+	date_str=$(date "+%Y%m%d%H%M%S%3N")
+	archive_dir=./output/test-"${date_str}"
+	# 创建归档目录
+	mkdir -p "${archive_dir}"
 	runJobs
 	archiveRes
 }
 
 showInfo() {
-  echo """
+	echo """
   ================================================
   #                 sql 性能测试工具               #
   # 版本： 1.0.0                                 #
@@ -117,50 +127,47 @@ showInfo() {
 
   """
 
-  help
+	help
 }
 
-
-loadConf(){
-  # shellcheck source=src/
-# 加载配置全局文件
-if [ ! -f "${CURRENT_PATH}"/config/conf ];then
-echo "文件不存在"
-else
-. "${CURRENT_PATH}"/config/conf
-# shellcheck disable=SC2027
-log "加载配置文件： "${CURRENT_PATH}"/config/conf"
-fi
-
-}
-
-showArgs(){
-log1 "###############################################################################"
-log1 "测试参数："
-log1 "db_ip=${db_ip}"
-log1 "db_port=${db_port}"
-log1 "db_user=${db_user}"
-log1 "client_num=${client_num}"
-log1 "queries_limit=${client_queries_limit}"
-log1 "###############################################################################"
+loadConf() {
+	# shellcheck source=src/
+	# 加载配置全局文件
+	if [ ! -f "${conf_file}" ]; then
+		log "配置文件不存在将使用默认配置或命令行输入参数:${conf_file}"
+	else
+		. "${conf_file}"
+		# shellcheck disable=SC2027
+		log "加载配置文件： ${conf_file}"
+	fi
 
 }
 
+showArgs() {
+	log1 "###############################################################################"
+	log1 "测试参数："
+	log1 "db_ip=${db_ip}"
+	log1 "db_port=${db_port}"
+	log1 "db_user=${db_user}"
+	log1 "client_num=${client_num}"
+	log1 "queries_limit=${client_queries_limit}"
+	log1 "###############################################################################"
 
+}
 
 help() {
-  echo """
-Usage: ./run.sh -p 9031
-       ./run.sh -s
-       ./run.sh -l
-       ./run.sh -c local
-       ./run.sh -p -c -i
-       ./run.sh -d pg-node5
+	echo """
+Usage: ./run.sh -f ./myconfig/conf.file
+       ./run.sh -j ./jobs
+       ./run.sh -h  192.168.1.1
+       ./run.sh -p  9001
+       ./run.sh -u  admin
+       ./run.sh -P  P@ssw0rd
 
 Options:
   -f      配置文件路径，默认：./config/conf
   -s      sql 任务路径，默认：./config/jobs
-  -h      数据库IP，默认：本机 IP
+  -H      数据库IP，默认：本机 IP
   -p      数据库端口，默认：9030
   -u      数据库用户，默认：root
   -P      数据库密码，默认：空
@@ -172,7 +179,6 @@ Options:
   """
 }
 
-
 #main
 
 #echo original parameters=[$@]
@@ -183,11 +189,11 @@ Options:
 #-l或--long选项后面是可接受的长选项，用逗号分开，冒号的意义同短选项。
 #-n选项后接选项解析错误时提示的脚本名字
 #ARGS=$(getopt -o ab:c:: --long along,blong:,clong:: -n "$0" -- "$@")
-ARGS=$(getopt -o vhf:: -n "$0" -- "$@")
+ARGS=$(getopt -o vhf:j:H:p:u:c:q: -n "$0" -- "$@")
 if [ $? != 0 ]; then
-  echo "参数错误，退出..."
-  help
-  exit 1
+	echo "参数错误，退出..."
+	help
+	exit 1
 fi
 
 #echo ARGS=[$ARGS]
@@ -196,30 +202,54 @@ eval set -- "${ARGS}"
 echo formatted parameters=[$@]
 
 while true; do
-  case "$1" in
-  -v)
-    showInfo
-    exit 0
-    shift
-    ;;
-  -h)
-    help
-    exit 0
-    shift
-    ;;
-  -f)
-    echo "option f:$4"
-    shift 2
-    ;;
-  --)
-    echo "1111"
-    shift
-    break
-    ;;
-  *)
-    help
-    exit 1
-    ;;
-  esac
+	case "$1" in
+	-v)
+		showInfo
+		exit 0
+		shift
+		;;
+	-h)
+		help
+		exit 0
+		shift
+		;;
+	-f)
+		conf_file=$2
+		shift 2
+		;;
+	-j)
+		jobs_path=$2
+		shift 2
+		;;
+	-H)
+		db_ip=$2
+		shift 2
+		;;
+	-p)
+		db_port=$2
+		shift 2
+		;;
+	-u)
+		db_user=$2
+		shift 2
+		;;
+	-c)
+		client_num=$2
+		shift 2
+		;;
+	-q)
+		#echo "option q:$2"
+		client_queries_limit=$2
+		shift 2
+		;;
+	--)
+		main
+		shift
+		break
+		;;
+	*)
+		help
+		exit 1
+		;;
+	esac
 done
-
