@@ -73,6 +73,7 @@ runJob() {
 runJobs() {
 	if [ ! -d "${jobs_path}" ]; then
 		log "jobs 路径不存在：$jobs_path"
+		help
 		exit 1
 	else
 		for file in "${jobs_path}"/*; do
