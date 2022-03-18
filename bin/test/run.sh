@@ -24,17 +24,18 @@ db_port='9030'
 conf_file="${CURRENT_PATH}"/config/conf
 # jobs
 jobs_path="${CURRENT_PATH}"/config/jobs
+cmd_input=""
 ## endregion
 
 ## 记录日志
-log() {
+logFmt() {
 	date_str=$(date "+%Y-%m-%d %H:%M:%S.%3N")
 	echo "$(hostname -s)" "${date_str}" "$1"
 	# shellcheck disable=SC2086
 	echo "$(hostname -s)" "${date_str}" $1 >>"${archive_dir}"/run.log
 }
 
-log1() {
+log() {
 	echo "$1"
 	# shellcheck disable=SC2086
 	echo $1 >>"${archive_dir}"/run.log
@@ -62,17 +63,17 @@ runJob() {
 	echo "${query_sql}" >./"${archive_dir}"/"${test_name}".sql
 	echo "${pre_query}" >./"${archive_dir}"/p_"${test_name}".sql
 
-	log1 "====================================================================================================================================="
-	log "执行测试：${test_name} "
-	log "执行预处理：${pre_query}"
-	log "执行测试 SQL：${query_sql}"
+	log "====================================================================================================================================="
+	logFmt "执行测试：${test_name} "
+	logFmt "执行预处理：${pre_query}"
+	logFmt "执行测试 SQL：${query_sql}"
 	runMss "${test_name}"
-	log "$1 执行完成： ${res}"
+	logFmt "$1 执行完成： ${res}"
 }
 
 runJobs() {
 	if [ ! -d "${jobs_path}" ]; then
-		log "jobs 路径不存在：$jobs_path"
+		logFmt "jobs 路径不存在：$jobs_path"
 		help
 		exit 1
 	else
@@ -85,7 +86,7 @@ runJobs() {
 				runJob "${test_name}" "${query_sql}" "${pre_query}"
 			fi
 			if test -d "$file"; then
-				log "dir:$file"
+				logFmt "dir:$file"
 			fi
 		done
 	fi
@@ -98,15 +99,17 @@ archiveRes() {
 	cat "${archive_dir}"/*.csv >"${archive_dir}"/result.csv
 	rm -rf "${archive_dir}"/0.csv
 
-	log1 "##########################################################################"
-	log1 "测试结果： ${archive_dir}/result.csv "
+	log "##########################################################################"
+	log "测试结果： ${archive_dir}/result.csv "
 	# shellcheck disable=SC2002
 	resFmt=$(cat "${archive_dir}"/result.csv | column -t -s,)
-	log1 "${resFmt}"
-	log1 "#########################################################################"
+	log "${resFmt}"
+	log "#########################################################################"
 }
 
 main() {
+  log "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ sql性能测试工具 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+  logFmt "Options 参数：${cmd_input}"
 	loadConf
 	showArgs
 	date_str=$(date "+%Y%m%d%H%M%S%3N")
@@ -135,24 +138,24 @@ loadConf() {
 	# shellcheck source=src/
 	# 加载配置全局文件
 	if [ ! -f "${conf_file}" ]; then
-		log "配置文件不存在将使用默认配置或命令行输入参数:${conf_file}"
+		logFmt "配置文件不存在将使用默认配置或命令行输入参数:${conf_file}"
 	else
 		. "${conf_file}"
 		# shellcheck disable=SC2027
-		log "加载配置文件： ${conf_file}"
+		logFmt "加载配置文件： ${conf_file}"
 	fi
 
 }
 
 showArgs() {
-	log1 "###############################################################################"
-	log1 "测试参数："
-	log1 "db_ip=${db_ip}"
-	log1 "db_port=${db_port}"
-	log1 "db_user=${db_user}"
-	log1 "client_num=${client_num}"
-	log1 "queries_limit=${client_queries_limit}"
-	log1 "###############################################################################"
+	log "###############################################################################"
+	log "测试参数："
+	log "db_ip=${db_ip}"
+	log "db_port=${db_port}"
+	log "db_user=${db_user}"
+	log "client_num=${client_num}"
+	log "queries_limit=${client_queries_limit}"
+	log "###############################################################################"
 
 }
 
@@ -180,7 +183,6 @@ Options:
   """
 }
 
-#main
 
 #echo original parameters=[$@]
 
@@ -192,7 +194,7 @@ Options:
 #ARGS=$(getopt -o ab:c:: --long along,blong:,clong:: -n "$0" -- "$@")
 ARGS=$(getopt -o vhf:j:H:p:u:c:q: -n "$0" -- "$@")
 if [ $? != 0 ]; then
-	echo "参数错误，退出..."
+	logFmt "参数错误，退出..."
 	help
 	exit 1
 fi
@@ -200,7 +202,7 @@ fi
 #echo ARGS=[$ARGS]
 #将规范化后的命令行参数分配至位置参数（$1,$2,...)
 eval set -- "${ARGS}"
-echo formatted parameters=[$@]
+cmd_input=$(echo  formatted parameters=[$@])
 
 while true; do
 	case "$1" in
