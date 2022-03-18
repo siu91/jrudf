@@ -152,6 +152,7 @@ showArgs() {
 	log "测试参数："
 	log "db_ip=${db_ip}"
 	log "db_port=${db_port}"
+	log "db_schema=${db_schema}"
 	log "db_user=${db_user}"
 	log "client_num=${client_num}"
 	log "queries_limit=${client_queries_limit}"
@@ -170,11 +171,12 @@ Usage: ./run.sh -f ./myconfig/conf.file
 
 Options:
   -f      配置文件路径，默认：./config/conf
-  -s      sql 任务路径，默认：./config/jobs
+  -j      sql 任务路径，默认：./config/jobs
   -H      数据库IP，默认：本机 IP
   -p      数据库端口，默认：9030
+  -s      数据库Schema，默认：ssb
   -u      数据库用户，默认：root
-  -P      数据库密码，默认：空
+  -P      数据库密码，默认：空（当前未加入Option）
   -c      测试并发数，默认：10
   -q      总查询次数，默认：10
   -h      帮助信息
@@ -230,6 +232,10 @@ while true; do
 		;;
 	-p)
 		db_port=$2
+		shift 2
+		;;
+	-s)
+		db_schema=$2
 		shift 2
 		;;
 	-u)
