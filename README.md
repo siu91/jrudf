@@ -96,11 +96,11 @@ java -jar jrudf-jar-with-dependencies.jar 9000
 
 ## Remote UDF 调试
 
-> 主要描述远程调试，在 Remote UDF 场景中远程调试是最有效的，因为整体上还要依赖一个 Doris 的调试环境，所以远程调试的方式是一个全流程的验证。如果用支持grpc proto file 的工具调试只有 rpc server 部分的调试，不能完整的测试功能。
+> 推荐远程调试，在 Remote UDF 场景中远程调试是最有效的，因为整体上还要依赖一个 Doris 的调试环境，所以远程调试的方式是一个全流程的验证。如果用支持grpc proto file 的工具调试只有 rpc server 部分的调试，不能完整的测试功能。
 
-### 基于 proto file 调试
+### proto file 调试
 
-- psotman ：最新版本支持 GRPC，可以通过界面去调试比较友好
+- Postman ：最新版本支持 GRPC，可以通过界面去调试比较友好
 - BloomRPC ：很适合 GRPC 的界面调试工具
 - Evans ：一个 RPC 命令行调试工具
 
@@ -116,14 +116,12 @@ java -jar jrudf-jar-with-dependencies.jar 9000
 
   ```java
               server = ServerBuilder.forPort(port)
-                      .maxInboundMessageSize(16777216)
-                      .addService(new FunctionServiceImpl(true))
+                      .addService(... some server)
                       .addService(ProtoReflectionService.newInstance()) // 反射模式，可以把这块代码用 debug 控制 
-                      .intercept(new LogServerInterceptor())
                       .build()
                       .start();
   ```
-
+  
 - 打开 Swagger
 
   ![](./assets/grpc-swagger.png)
@@ -143,9 +141,11 @@ nohup java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=[ip]:50
 
 
 
-## 测试
+## Remote UDF 测试
 
-### 在 Doris 上创建 UDF
+### 功能测试
+
+#### 在 Doris 上创建 UDF
 目前暂不支持 UDAF 和 UDTF
 ```sql
 CREATE FUNCTION
@@ -174,21 +174,25 @@ CREATE FUNCTION rpc_add(INT, INT) RETURNS INT PROPERTIES (
 );
 ```
 
-### 使用 UDF
+#### 使用 UDF
 用户使用 UDF 必须拥有对应数据库的 SELECT 权限。
 
 UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函数的作用域是全局的，而 UDF 的作用域是 DB内部。当链接 session 位于数据内部时，直接使用 UDF 名字会在当前DB内部查找对应的 UDF。否则用户需要显示的指定 UDF 的数据库名字，例如 dbName.funcName。
 
-### 删除 UDF
+#### 删除 UDF
 当你不再需要 UDF 函数时，你可以通过下述命令来删除一个 UDF 函数, 可以参考 DROP FUNCTION
 
 
 
-## Remote UDF 性能测试
+***注：测试结论一并在性能测试部分说明***
 
 
 
-### 测试模型
+### 性能测试
+
+
+
+#### 测试模型
 
 > #### 说明
 >
@@ -210,7 +214,7 @@ UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函�
 
 
 
-### 测试数据
+#### 测试数据
 
 单节点的 rpc server 下得出如下测试数据：
 
@@ -252,7 +256,7 @@ r-udf-6-t-16384  mixed  1.329  1.265  1.474  10          1
 #########################################################################
 ```
 
-### 测试结论
+#### 测试结论
 
 1. Native UDF 与内置函数的**性能基本一致**
 2. 在非向量化引擎的环境下（enable_vectorized_engine = false），Remote UDF 性能**极差**
