@@ -1,4 +1,4 @@
-# Doris  Remote UDF 方案
+# Doris  Remote UDF 的开发和测试
 > By [Siu]() 2021/3/15
 
 
@@ -35,7 +35,7 @@
 
 ![](assets/arch.svg)
 
-### 开发
+### 开发（coding）
 
 #### 编译 proto
 
@@ -94,17 +94,17 @@ java -jar jrudf-jar-with-dependencies.jar 9000
 
 
 
-## Remote UDF 调试
+### 调试（debug）
 
 > 推荐远程调试，在 Remote UDF 场景中远程调试是最有效的，因为整体上还要依赖一个 Doris 的调试环境，所以远程调试的方式是一个全流程的验证。如果用支持grpc proto file 的工具调试只有 rpc server 部分的调试，不能完整的测试功能。
 
-### proto file 调试
+#### proto file 调试
 
 - Postman ：最新版本支持 GRPC，可以通过界面去调试比较友好
 - BloomRPC ：很适合 GRPC 的界面调试工具
 - Evans ：一个 RPC 命令行调试工具
 
-### Swagger 调试
+#### Swagger 调试
 
 - 使用 [grpc-swagger](https://github.com/grpc-swagger/grpc-swagger) 这个项目:
 
@@ -126,7 +126,7 @@ java -jar jrudf-jar-with-dependencies.jar 9000
 
   ![](./assets/grpc-swagger.png)
 
-### IDEA 远程调试
+#### IDEA 远程调试
 
 远程服务器上启动服务
 ```shell
@@ -142,6 +142,8 @@ nohup java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=[ip]:50
 
 
 ## Remote UDF 测试
+
+> 由于当前版本不支持 remote UDF ，所以采用主干分支的编译版本，编译方式参考附录中的文档《编译 Doris》。
 
 ### 功能测试
 
@@ -206,7 +208,7 @@ UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函�
 > - Remote UDF 4（enable_vectorized_engine = true，batch_size = 4096）
 > - Remote UDF 5（enable_vectorized_engine = true，batch_size = 8192）
 >
-> ***注：UDF 的实现逻辑 str.length()***，内置函数选取 length() 进行比较
+> ***函数逻辑：UDF 的实现逻辑 str.length()***，内置函数选取 `length()` 进行比较
 >
 > 测试工具：mysqlslqp
 >
@@ -214,7 +216,7 @@ UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函�
 >
 > 测试环境：3 be 32G/8C，RPC Server JVM 默认
 >
-> Doris 版本（由于当前版本不支持 remote UDF ，所以采用主干分支的编译版本，编译方式参考附录中的文档）：
+> Doris 版本：
 > ​	branch master
 > ​	latest commit [`f4663ad`](https://github.com/apache/incubator-doris/commit/f4663ad2eb3fc8ce929304ccdea09d87bb86ec8a)
 > ​	Compiled from the official docker image
