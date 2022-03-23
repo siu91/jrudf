@@ -4,20 +4,20 @@
 
 ## Remote UDF 介绍
 
->  参考官方的文档。
-
-Remote UDF Service 支持通过 RPC 的方式访问用户提供的 UDF Service，以实现用户自定义函数的执行。相比于 Native 的 UDF 实现，Remote UDF Service 有如下优势和限制：
-
-优势
-
-- 跨语言：可以用 Protobuf 支持的各类语言编写 UDF Service。
-- 安全：UDF 执行失败或崩溃，仅会影响 UDF Service 自身，而不会导致 Doris 进程崩溃。
-- 灵活：UDF Service 中可以调用任意其他服务或程序库类，以满足更多样的业务需求。
-
-使用限制
-
-- 性能：相比于 Native UDF，UDF Service 会带来额外的网络开销，因此性能会远低于 Native UDF。同时，UDF Service 自身的实现也会影响函数的执行效率，用户需要自行处理高并发、线程安全等问题。
-- 单行模式和批处理模式：Doris 原先的的基于行存的查询执行框架会对每一行数据执行一次 UDF RPC 调用，因此执行效率非常差，而在新的向量化执行框架下，会对每一批数据（默认2048行）执行一次 UDF RPC 调用，因此性能有明显提升。实际测试中，基于向量化和批处理方式的 Remote UDF 性能和基于行存的 Native UDF 性能相当，可供参考
+>  以下参考官方的文档：
+>
+>  Remote UDF Service 支持通过 RPC 的方式访问用户提供的 UDF Service，以实现用户自定义函数的执行。相比于 Native 的 UDF 实现，Remote UDF Service 有如下优势和限制：
+>
+>  优势
+>
+>  - 跨语言：可以用 Protobuf 支持的各类语言编写 UDF Service。
+>  - 安全：UDF 执行失败或崩溃，仅会影响 UDF Service 自身，而不会导致 Doris 进程崩溃。
+>  - 灵活：UDF Service 中可以调用任意其他服务或程序库类，以满足更多样的业务需求。
+>
+>  使用限制
+>
+>  - 性能：相比于 Native UDF，UDF Service 会带来额外的网络开销，因此性能会远低于 Native UDF。同时，UDF Service 自身的实现也会影响函数的执行效率，用户需要自行处理高并发、线程安全等问题。
+>  - 单行模式和批处理模式：Doris 原先的的基于行存的查询执行框架会对每一行数据执行一次 UDF RPC 调用，因此执行效率非常差，而在新的向量化执行框架下，会对每一批数据（默认2048行）执行一次 UDF RPC 调用，因此性能有明显提升。实际测试中，基于向量化和批处理方式的 Remote UDF 性能和基于行存的 Native UDF 性能相当，可供参考
 
 
 
@@ -27,9 +27,9 @@ Remote UDF Service 支持通过 RPC 的方式访问用户提供的 UDF Service�
 
 
 
-## Remote UDF 开发和调试：RPC Server 
+## Remote UDF 开发
 
-
+> 主要是 RPC Server 部分的开发。
 
 ### 设计
 
@@ -79,24 +79,57 @@ Remote UDF Service 支持通过 RPC 的方式访问用户提供的 UDF Service�
 
 
 
-#### 编码
-
-
-
-#### 编译
+#### 编译和运行
 
 ```shell
+# 编译
 mvn package
 ```
 
-#### 运行
-
 ```shell
+# 运行
 java -jar jrudf-jar-with-dependencies.jar 9000
 ```
 `9000` 是默认端口，可以不传
 
-#### 远程调试
+
+
+## Remote UDF 调试
+
+> 主要描述远程调试，在 Remote UDF 场景中远程调试是最有效的，因为整体上还要依赖一个 Doris 的调试环境，所以远程调试的方式是一个全流程的验证。如果用支持grpc proto file 的工具调试只有 rpc server 部分的调试，不能完整的测试功能。
+
+### 基于 proto file 调试
+
+- psotman ：最新版本支持 GRPC，可以通过界面去调试比较友好
+- BloomRPC ：很适合 GRPC 的界面调试工具
+- Evans ：一个 RPC 命令行调试工具
+
+### Swagger 调试
+
+- 使用 [grpc-swagger](https://github.com/grpc-swagger/grpc-swagger) 这个项目:
+
+  ```shell
+  java -jar grpc-swagger-web/target/grpc-swagger.jar --server.port=8888
+  ```
+
+- 在 RPC Server 中开启反射模式：
+
+  ```java
+              server = ServerBuilder.forPort(port)
+                      .maxInboundMessageSize(16777216)
+                      .addService(new FunctionServiceImpl(true))
+                      .addService(ProtoReflectionService.newInstance()) // 反射模式，可以把这块代码用 debug 控制 
+                      .intercept(new LogServerInterceptor())
+                      .build()
+                      .start();
+  ```
+
+- 打开 Swagger
+
+  ![](./assets/grpc-swagger.png)
+
+### IDEA 远程调试
+
 远程服务器上启动服务
 ```shell
 java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=[ip]:5005 -jar jrudf-jar-with-dependencies.jar
@@ -105,6 +138,8 @@ nohup java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=[ip]:50
 ```
 本地 IDEA 添加 Remote 配置:
 `Edit Configurtions-> Add New Configrution->Remote JVM Debug`
+
+<img src="assets/idea-remote-debug.png" alt="idea-remote-debug" style="zoom:50%;" />
 
 
 
@@ -249,13 +284,6 @@ r-udf-6-t-16384  mixed  1.329  1.265  1.474  10          1
 所以所有方案到最后都不是讨论好不好的问题，而是合不合适的问题。
 
 综合考虑功能、稳定性是我们迫切的需求，性能上都有基本同等级别的实现方式：现阶段使用 Native UDF 去支持需求；长期来看，待社区版本稳定支持 Remote UDF 时，定义好开发范式，用当前团队熟悉的技术栈来开发 UDF RPC Server 来迁移当前的需求。
-
-**计划：**
-
-- M4 开始投入 Native UDF 的开发
-- 如果社区在 M4 之前 release Remote UDF feature 则选择 Remote UDF 方案
-
-
 
 
 
