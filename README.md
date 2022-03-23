@@ -210,11 +210,18 @@ UDF 的使用与普通的函数方式一致，唯一的区别在于，内置函�
 >
 > 测试工具：mysqlslqp
 >
+> 测试数据：使用 Doris SSB 中的 Customer 表，150 万
+>
 > 测试环境：3 be 32G/8C，RPC Server JVM 默认
+>
+> Doris 版本（由于当前版本不支持 remote UDF ，所以采用主干分支的编译版本，编译方式参考附录中的文档）：
+> ​	branch master
+> ​	latest commit [`f4663ad`](https://github.com/apache/incubator-doris/commit/f4663ad2eb3fc8ce929304ccdea09d87bb86ec8a)
+> ​	Compiled from the official docker image
 
 
 
-#### 测试数据
+#### 测试结果
 
 单节点的 rpc server 下得出如下测试数据：
 
